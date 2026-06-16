@@ -1,10 +1,16 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
+import { runCompareCommand } from './commands/compare.js';
+import { runInsightsCommand } from './commands/insights.js';
+import { runLeaderboardCommand } from './commands/leaderboard.js';
+import { runRecommendCommand } from './commands/recommend.js';
 import { runReportCommand } from './commands/report.js';
 import { runScanCommand } from './commands/scan.js';
 import { runTaskReportCommand, runTaskStartCommand, runTaskStopCommand } from './commands/task.js';
 import { runTodayCommand } from './commands/today.js';
+import { runWatchCommand } from './commands/watch.js';
+import { runWasteCommand } from './commands/waste.js';
 
 const program = new Command();
 
@@ -18,9 +24,24 @@ program.command('scan').description('Scan local AI coding data into SQLite').act
 program.command('today').description("Show today's AI coding activity summary").action(runTodayCommand);
 
 program
+  .command('compare')
+  .description('Compare the last 7 days against the previous 7 days')
+  .action(runCompareCommand);
+
+program
   .command('report')
   .description('Show ROI report for the current Git repository over the last 7 days')
   .action(runReportCommand);
+
+program.command('insights').description('Show V0.2 Lite task insights for the last 30 days').action(runInsightsCommand);
+
+program.command('leaderboard').description('Show V0.4 Lite task leaderboard for the last 30 days').action(runLeaderboardCommand);
+
+program.command('recommend').description('Show V0.5 Lite recommendations for the last 30 days').action(runRecommendCommand);
+
+program.command('watch').description('Watch the current branch and auto-manage tasks').action(runWatchCommand);
+
+program.command('waste').description('Show V0.3 Lite potential waste tasks for the last 30 days').action(runWasteCommand);
 
 const taskProgram = program.command('task').description('Track time-window-based task attribution');
 

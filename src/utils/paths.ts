@@ -16,6 +16,11 @@ export function expandHome(inputPath: string): string {
 }
 
 export function normalizeProjectPath(inputPath: string): string {
+  if (/^[a-zA-Z]:[\\/]/.test(inputPath)) {
+    const normalizedWindowsPath = path.win32.normalize(inputPath);
+    return normalizedWindowsPath.toLowerCase();
+  }
+
   const resolved = path.resolve(expandHome(inputPath));
   const normalized = path.normalize(resolved);
   return process.platform === 'win32' ? normalized.toLowerCase() : normalized;

@@ -425,6 +425,31 @@ export function listRecentTasks(db: Database.Database, limit = 10): TaskRecord[]
     .all(limit) as TaskRecord[];
 }
 
+export function listCompletedTasksInWindow(
+  db: Database.Database,
+  fromIso: string,
+  toIso: string,
+): TaskRecord[] {
+  return db
+    .prepare(
+      `
+      SELECT
+        id,
+        name,
+        project_path AS projectPath,
+        started_at AS startedAt,
+        ended_at AS endedAt,
+        status,
+        created_at AS createdAt,
+        updated_at AS updatedAt
+      FROM tasks
+      WHERE status = 'completed' AND ended_at IS NOT NULL AND ended_at >= ? AND ended_at < ?
+      ORDER BY ended_at DESC
+    `,
+    )
+    .all(fromIso, toIso) as TaskRecord[];
+}
+
 function getTaskById(db: Database.Database, taskId: number): TaskRecord {
   const row = db
     .prepare(

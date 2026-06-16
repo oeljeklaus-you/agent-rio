@@ -17,6 +17,13 @@ export class GitRepositoryNotFoundError extends Error {
   }
 }
 
+export class DetachedHeadError extends Error {
+  constructor() {
+    super('Detached HEAD detected.');
+    this.name = 'DetachedHeadError';
+  }
+}
+
 export function getGitMetricsForCurrentRepo(fromDate: Date): GitMetrics {
   const repoRoot = getGitRepoRoot();
   return getGitMetricsForRepoWindow(repoRoot, fromDate, new Date());
@@ -26,11 +33,21 @@ export function getGitRepoRoot(cwd = process.cwd()): string {
   return execGit(['rev-parse', '--show-toplevel'], cwd).trim();
 }
 
+export function getCurrentGitBranch(cwd = process.cwd()): string {
+  const branch = execGit(['branch', '--show-current'], cwd).trim();
+
+  if (!branch) {
+    throw new DetachedHeadError();
+  }
+
+  return branch;
+}
+
 export function tryGetGitRepoRoot(cwd = process.cwd()): string | null {
   try {
     return getGitRepoRoot(cwd);
   } catch (error) {
-    if (error instanceof GitRepositoryNotFoundError) {
+    if (error instanceof GitRepositoryNotFoundError || isGitUnavailableError(error)) {
       return null;
     }
 
@@ -114,6 +131,10 @@ function execGit(args: string[], cwd = process.cwd()): string {
 
     throw error;
   }
+}
+
+function isGitUnavailableError(error: unknown): boolean {
+  return error instanceof Error && 'code' in error && error.code === 'ENOENT';
 }
 
 function formatGitDateTime(date: Date): string {

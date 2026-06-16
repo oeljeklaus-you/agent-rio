@@ -35,7 +35,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check": "npm run build",
-    "test": "npm run build && node --test dist/tests/claude.test.js dist/tests/codex.test.js dist/tests/report.test.js dist/tests/task.test.js dist/tests/today.test.js",
+    "test": "npm run build && node --test dist/tests/claude.test.js dist/tests/codex.test.js dist/tests/compare.test.js dist/tests/insights.test.js dist/tests/leaderboard.test.js dist/tests/recommend.test.js dist/tests/report.test.js dist/tests/task.test.js dist/tests/today.test.js dist/tests/watch.test.js dist/tests/waste.test.js",
     "lint": "eslint .",
     "format": "prettier --write ."
   },

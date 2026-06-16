@@ -1,20 +1,16 @@
 # Attribution
 
-Task Attribution is time-window based.
+Agent ROI uses time-window-based task attribution.
 
-That means Agent ROI does not try to infer intent from prompts, diffs, or AI conversation content.
+That means it tries to answer:
 
-It uses a simpler and auditable rule:
+`What AI activity happened during this task window in this project?`
 
-```text
-Task Start
-↓
-Task End
-↓
-Time Window
-```
+It does not try to answer:
 
-## Attribution Rule
+`What was the exact semantic intent of every prompt or diff?`
+
+## Core Rule
 
 A session is counted toward a task only when all of the following are true:
 
@@ -24,33 +20,75 @@ A session is counted toward a task only when all of the following are true:
 
 Claude latest snapshots are not counted in task historical attribution.
 
-## Why This Model
+## Why This Model Exists
 
-This model is intentionally narrow.
+This model is intentionally narrow so the tool stays:
 
-It keeps V0.1 local, deterministic, and easy to explain:
+- local-first
+- deterministic
+- easy to explain
+- easy to audit
 
-- no cloud state
-- no background agent
-- no prompt classification
-- no hidden attribution heuristic
+It avoids:
 
-## Included and Excluded Data
+- cloud state
+- prompt classification
+- hidden attribution heuristics
 
-Included in task attribution:
+## Included Data
 
 - Codex sessions matched by project path and task time window
 - Git activity matched to the same repository and time window
 
-Excluded from task attribution:
+## Excluded Data
 
 - Claude latest snapshots
 - AI activity outside the task time window
 - sessions from a different project path
+- Claude historical attribution
 
-## Output Metrics
+## What Commands Reuse This Model
 
-Task summaries and task reports currently expose:
+The following commands reuse the same attribution foundation:
+
+- `agent-roi task report`
+- `agent-roi watch`
+- `agent-roi insights`
+- `agent-roi waste`
+- `agent-roi recommend`
+- `agent-roi leaderboard`
+- `agent-roi compare`
+
+Shared attribution rules:
+
+- Codex task attribution only
+- Claude snapshots excluded
+
+Commands with a 30 day default window:
+
+- Last 30 Days
+- completed tasks only
+
+These commands use that window:
+
+- `agent-roi insights`
+- `agent-roi waste`
+- `agent-roi recommend`
+- `agent-roi leaderboard`
+
+`agent-roi compare` uses a different default window:
+
+- Current Period: Last 7 Days
+- Previous Period: Previous 7 Days
+- completed tasks only
+
+`agent-roi watch` does not change attribution rules.
+
+It only automates task start / stop based on the current Git branch.
+
+## Current Task Metrics
+
+Task summaries and reports currently expose:
 
 - Duration
 - AI Cost
@@ -64,37 +102,7 @@ Task summaries and task reports currently expose:
 - Cost Per Commit
 - Cost Per 1000 LOC
 
-Per-hour metrics are calculated from:
-
-```text
-task.started_at
-↓
-task.ended_at
-↓
-durationHours
-```
-
-Per-hour metrics use that task duration together with matched Codex sessions and matched Git activity.
-
 If duration is zero, invalid, or too short to calculate reliably, per-hour metrics are shown as `N/A`.
-
-Example task summary:
-
-```text
-Task: Fix purchase button
-
-Duration: 2h 0m
-AI Cost: $1.25
-Cost Per Hour: $0.63/h
-Tokens: 1,500,000
-Tokens Per Hour: 750k/h
-Commits: 2
-Commits Per Hour: 1/h
-Files Changed: 7
-Files Changed Per Hour: 3.5/h
-Cost Per Commit: $0.63
-Cost Per 1000 LOC: $2.97
-```
 
 ## FAQ
 
@@ -120,14 +128,10 @@ Possible reasons:
 
 ### Why is Claude not counted?
 
-Because V0.1 only imports Claude latest snapshot data.
-
-That snapshot shape is useful for repository-level visibility, but it is not a reliable historical session stream for task-level attribution.
+Because the current product only supports Claude latest snapshot import, not reliable historical Claude task attribution.
 
 ### Why is cost different from billing?
 
 Because Codex cost is estimated from a local pricing table.
 
 Agent ROI is designed for ROI analysis, not invoice reconciliation.
-
-Provider billing may differ due to pricing updates, billing rules, or model mapping gaps.
