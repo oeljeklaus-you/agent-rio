@@ -148,6 +148,28 @@ Takeaway:
 You spent less and produced more Git output.
 ```
 
+Budget:
+
+```text
+Budget (This Month)
+
+Scope
+- Codex only
+- Claude snapshots excluded
+
+Spend
+- $12.41 spent this month
+- 12 Codex sessions
+- 1.2M tokens
+
+Projection
+- $37.23 projected month-end spend
+- $1.24/day over 10 of 30 days
+
+Status
+- Projected over budget by $7.23 on a $30.00 monthly budget.
+```
+
 ## Quick Start
 
 ```bash
@@ -170,6 +192,8 @@ agent-roi recommend
 agent-roi leaderboard
 
 agent-roi compare
+
+agent-roi budget --budget 30
 ```
 
 ## Core Workflow
@@ -190,6 +214,8 @@ recommend
 leaderboard
 ↓
 compare
+↓
+budget
 ```
 
 What each step does:
@@ -212,6 +238,8 @@ What each step does:
   See your most expensive and most efficient tasks.
 - `compare`
   Compare the last 7 days with the previous 7 days.
+- `budget`
+  Track current month Codex spend and projected month-end budget.
 
 ## Commands
 
@@ -233,6 +261,8 @@ What each step does:
   Rank recent tasks by cost and efficiency.
 - `agent-roi compare`
   Compare the last 7 days with the previous 7 days.
+- `agent-roi budget`
+  Track current month Codex spend and projected month-end budget.
 
 ## What Agent ROI Solves
 

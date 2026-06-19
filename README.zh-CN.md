@@ -148,6 +148,28 @@ Takeaway:
 You spent less and produced more Git output.
 ```
 
+Budget：
+
+```text
+Budget (This Month)
+
+Scope
+- Codex only
+- Claude snapshots excluded
+
+Spend
+- $12.41 spent this month
+- 12 Codex sessions
+- 1.2M tokens
+
+Projection
+- $37.23 projected month-end spend
+- $1.24/day over 10 of 30 days
+
+Status
+- Projected over budget by $7.23 on a $30.00 monthly budget.
+```
+
 ## Quick Start
 
 ```bash
@@ -170,6 +192,8 @@ agent-roi recommend
 agent-roi leaderboard
 
 agent-roi compare
+
+agent-roi budget --budget 30
 ```
 
 ## Core Workflow
@@ -190,6 +214,8 @@ recommend
 leaderboard
 ↓
 compare
+↓
+budget
 ```
 
 每一步的作用：
@@ -212,6 +238,8 @@ compare
   查看最贵和最高效的任务。
 - `compare`
   比较最近 7 天和前 7 天的变化。
+- `budget`
+  跟踪本月 Codex 花费和月末预算预测。
 
 ## Commands
 
@@ -233,6 +261,8 @@ compare
   查看最近任务的成本和效率排行榜。
 - `agent-roi compare`
   比较最近 7 天和前 7 天。
+- `agent-roi budget`
+  跟踪本月 Codex 花费和月末预算预测。
 
 ## 它解决什么问题
 

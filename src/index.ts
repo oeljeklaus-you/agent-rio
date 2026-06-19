@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
+import { runBudgetCommand } from './commands/budget.js';
 import { runCompareCommand } from './commands/compare.js';
 import { runInsightsCommand } from './commands/insights.js';
 import { runLeaderboardCommand } from './commands/leaderboard.js';
@@ -22,6 +23,12 @@ program
 program.command('scan').description('Scan local AI coding data into SQLite').action(runScanCommand);
 
 program.command('today').description("Show today's AI coding activity summary").action(runTodayCommand);
+
+program
+  .command('budget')
+  .description('Track current month Codex spend and projected month-end budget')
+  .option('-b, --budget <usd>', 'Monthly budget in USD', Number)
+  .action(runBudgetCommand);
 
 program
   .command('compare')

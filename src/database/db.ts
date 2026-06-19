@@ -241,6 +241,13 @@ export type TodaySummaryRow = {
   costUsd: number | null;
 };
 
+export type SessionSummaryRow = {
+  count: number;
+  totalTokens: number;
+  costUsd: number | null;
+  unknownCount: number;
+};
+
 export function getTodaySummaryForSource(
   db: Database.Database,
   source: 'codex' | 'claude',
@@ -272,6 +279,37 @@ export function getTodaySummaryForSource(
       outputTokens: 0,
       totalTokens: 0,
       costUsd: 0,
+    }
+  );
+}
+
+export function getSessionSummaryForSource(
+  db: Database.Database,
+  source: 'codex' | 'claude',
+  fieldName: 'started_at' | 'created_at' | 'updated_at',
+  fromIso: string,
+  toIso: string,
+): SessionSummaryRow {
+  const row = db
+    .prepare(
+      `
+      SELECT
+        COUNT(*) AS count,
+        COALESCE(SUM(total_tokens), 0) AS totalTokens,
+        SUM(cost_usd) AS costUsd,
+        SUM(CASE WHEN cost_source = 'unknown_model' THEN 1 ELSE 0 END) AS unknownCount
+      FROM sessions
+      WHERE source = ? AND ${fieldName} >= ? AND ${fieldName} < ?
+    `,
+    )
+    .get(source, fromIso, toIso) as SessionSummaryRow | undefined;
+
+  return (
+    row ?? {
+      count: 0,
+      totalTokens: 0,
+      costUsd: 0,
+      unknownCount: 0,
     }
   );
 }
