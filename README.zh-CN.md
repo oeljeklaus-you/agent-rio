@@ -46,6 +46,8 @@ agent-roi ui --open
 
 - `Overview`
   用可视化方式汇总 spend、coverage gap、趋势方向、waste 信号和下一步建议。
+- `Health`
+  专门解释最近 task 为什么匹配上了，或者为什么还没匹配上 Codex attribution。
 - `Projects`
   可搜索、可筛选地查看 tracked / untracked project、sessions、tokens 和最近活动。
 - `Tasks`
@@ -193,6 +195,25 @@ Status
 - Projected over budget by $7.23 on a $30.00 monthly budget.
 ```
 
+Debug attribution：
+
+```text
+Attribution Debug
+
+Coverage
+- 6 recent completed tasks
+- 2 matched to Codex sessions
+- 4 still unmatched
+
+Why unmatched
+- 2 tasks had no matching project path
+- 1 task had project activity outside the task window
+
+Next steps
+- Run agent-roi watch in active repos
+- Keep task windows aligned with real work
+```
+
 ## Quick Start
 
 ```bash
@@ -219,6 +240,8 @@ agent-roi compare
 agent-roi budget --budget 30
 
 agent-roi ui --open
+
+agent-roi debug attribution
 ```
 
 ## Core Workflow
@@ -243,6 +266,8 @@ compare
 budget
 ↓
 ui
+↓
+debug attribution
 ```
 
 每一步的作用：
@@ -269,6 +294,8 @@ ui
   跟踪本月 Codex 花费和月末预算预测。
 - `ui`
   打开本地 dashboard，查看 overview、projects、tasks、budget、waste、recommendations 和排行榜。
+- `debug attribution`
+  解释为什么 completed tasks 匹配上了，或者为什么还没有匹配上 Codex attribution。
 
 ## Commands
 
@@ -280,6 +307,8 @@ ui
   每 15 秒轮询当前 Git branch，并自动 start / stop task。
 - `agent-roi ui`
   打开本地 dashboard。可配合 `--open` 自动打开浏览器，也可配合 `--budget <usd>` 显示预算目标。
+- `agent-roi debug attribution`
+  查看 attribution coverage、未匹配原因，以及下一步建议动作。
 - `agent-roi report`
   查看当前 Git 仓库的 ROI 报告。
 - `agent-roi insights`
@@ -294,8 +323,6 @@ ui
   比较最近 7 天和前 7 天。
 - `agent-roi budget`
   跟踪本月 Codex 花费和月末预算预测。
-- `agent-roi ui`
-  打开本地 dashboard，查看 overview、projects、tasks、budget、waste、recommendations 和排行榜。
 
 ## 它解决什么问题
 
@@ -352,6 +379,26 @@ Agent ROI 当前使用：
 - Claude 历史 reconstruction
 
 完整说明见 [docs/attribution.md](docs/attribution.md)。
+
+## Attribution Debugging
+
+`agent-roi debug attribution` 最适合回答这个问题：
+
+`为什么我明明 scan 到数据了，但 task insight 还是很薄？`
+
+它会汇总：
+
+- 最近 completed tasks 里有多少匹配上了 Codex 数据
+- 还有多少 recent tasks 没匹配上
+- 更像是项目路径不匹配，还是 task 时间窗口不匹配
+- 最近 task 是否存在 partial cost coverage
+- 现在最值得做的下一步动作
+
+适合在这些时候使用：
+
+- `task report` 里经常看到 `No matched Codex task data`
+- dashboard 上很多 task-based 页面内容很空
+- 你想快速判断下一步该用 `watch`、补 task，还是把 task window 切得更准
 
 ## Compare
 

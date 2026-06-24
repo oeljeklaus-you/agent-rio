@@ -46,6 +46,8 @@ What the dashboard currently gives you:
 
 - `Overview`
   A visual summary of spend, coverage gaps, trend direction, waste signals, and the next recommendation.
+- `Health`
+  A data health page that explains why recent tasks did or did not match Codex task attribution.
 - `Projects`
   A searchable, filterable view of tracked vs untracked projects, sessions, tokens, and latest activity.
 - `Tasks`
@@ -193,6 +195,25 @@ Status
 - Projected over budget by $7.23 on a $30.00 monthly budget.
 ```
 
+Debug attribution:
+
+```text
+Attribution Debug
+
+Coverage
+- 6 recent completed tasks
+- 2 matched to Codex sessions
+- 4 still unmatched
+
+Why unmatched
+- 2 tasks had no matching project path
+- 1 task had project activity outside the task window
+
+Next steps
+- Run agent-roi watch in active repos
+- Keep task windows aligned with real work
+```
+
 ## Quick Start
 
 ```bash
@@ -219,6 +240,8 @@ agent-roi compare
 agent-roi budget --budget 30
 
 agent-roi ui --open
+
+agent-roi debug attribution
 ```
 
 ## Core Workflow
@@ -243,6 +266,8 @@ compare
 budget
 ↓
 ui
+↓
+debug attribution
 ```
 
 What each step does:
@@ -269,6 +294,8 @@ What each step does:
   Track current month Codex spend and projected month-end budget.
 - `ui`
   Open the local dashboard for overview, projects, tasks, budget, waste, recommendations, and rankings.
+- `debug attribution`
+  Explain why completed tasks did or did not match Codex attribution.
 
 ## Commands
 
@@ -280,6 +307,8 @@ What each step does:
   Auto-start and auto-stop tasks by polling the current Git branch every 15 seconds.
 - `agent-roi ui`
   Open the local dashboard. Use `--open` to launch it in your browser and `--budget <usd>` to show a budget target.
+- `agent-roi debug attribution`
+  Inspect attribution coverage, unmatched task reasons, and suggested next steps.
 - `agent-roi report`
   Show repository-level ROI for the current Git repo.
 - `agent-roi insights`
@@ -350,6 +379,26 @@ It does not use:
 - Claude historical reconstruction
 
 See [docs/attribution.md](docs/attribution.md) for the full model.
+
+## Attribution Debugging
+
+`agent-roi debug attribution` is the fastest way to answer:
+
+`Why do I have scan data, but thin task insights?`
+
+It summarizes:
+
+- how many recent completed tasks matched Codex data
+- how many recent completed tasks are still unmatched
+- whether the likely issue is project path mismatch or time-window mismatch
+- whether recent tasks have partial cost coverage
+- which next step is most useful now
+
+Use it when:
+
+- `task report` shows `No matched Codex task data`
+- the dashboard has lots of empty task-based views
+- you want to know whether to run `watch`, create more tasks, or tighten task windows
 
 ## Compare
 

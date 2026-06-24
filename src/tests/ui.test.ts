@@ -7,6 +7,7 @@ import { createUiServer } from '../ui/server.js';
 import { buildOverviewPayload, loadOverviewPayload, type OverviewPayload } from '../ui/view-models.js';
 import type { BudgetAnalysis } from '../commands/budget.js';
 import type { CompareAnalysis } from '../commands/compare.js';
+import type { AttributionDebugAnalysis } from '../commands/debug.js';
 import type { InsightAnalysis } from '../commands/insights.js';
 import type { LeaderboardAnalysis } from '../commands/leaderboard.js';
 import type { RecommendationAnalysis } from '../commands/recommend.js';
@@ -40,6 +41,7 @@ function createSession(overrides: Partial<Parameters<typeof upsertSessionRecords
 function createAnalyses(): {
   budget: BudgetAnalysis;
   compare: CompareAnalysis;
+  dataHealth: AttributionDebugAnalysis;
   insights: InsightAnalysis;
   waste: WasteAnalysis;
   recommend: RecommendationAnalysis;
@@ -89,6 +91,35 @@ function createAnalyses(): {
         currentValue: 3.4,
       },
       takeaway: 'You spent less and produced more Git output.',
+    },
+    dataHealth: {
+      noLocalUsage: false,
+      latestSessionCaptureAt: '2026-06-19T10:00:00.000Z',
+      codexSessionCount: 12,
+      claudeSessionCount: 1,
+      unknownCostSessionCount: 0,
+      trackedProjectCount: 1,
+      untrackedProjectCount: 1,
+      activeProjectCount: 0,
+      recentCompletedTaskCount: 6,
+      matchedRecentTaskCount: 4,
+      unmatchedRecentTaskCount: 2,
+      unmatchedNoProjectSessionsCount: 1,
+      unmatchedOutsideWindowCount: 1,
+      partialCostRecentTaskCount: 0,
+      notes: ['1 scanned project still has usage without tracked tasks.'],
+      onboardingSteps: ['Run agent-roi watch in active repos.'],
+      sampleUnmatchedTasks: [
+        {
+          name: 'Task B',
+          projectPath: '/workspace/app',
+          endedAt: '2026-06-19T08:00:00.000Z',
+          reason: 'This project has Codex sessions, but none landed inside the task time window.',
+          projectSessionCount: 3,
+          windowSessionCount: 0,
+          unknownCostWindowSessionCount: 0,
+        },
+      ],
     },
     insights: {
       completedTaskCount: 18,
@@ -223,6 +254,7 @@ test('overview payload shows no local usage empty state', () => {
   });
 
   assert.equal(payload.emptyState?.title, 'No local AI usage found.');
+  assert.equal(payload.emptyState?.nextSteps[0], 'Run agent-roi scan');
 });
 
 test('overview payload shows no completed tasks empty state', () => {
@@ -234,6 +266,7 @@ test('overview payload shows no completed tasks empty state', () => {
   });
 
   assert.equal(payload.emptyState?.title, 'No completed tasks yet.');
+  assert.match(payload.emptyState?.nextSteps.join(' ') ?? '', /watch/);
   db.close();
 });
 
@@ -257,6 +290,8 @@ test('overview payload keeps budget visible when task data is unmatched', () => 
   assert.equal(payload.tasks.items[0]?.hasMatchedAiData, false);
   assert.equal(payload.tasks.items[0]?.aiCostUsd, null);
   assert.equal(payload.tasks.items[0]?.tokensLabel, 'N/A');
+  assert.equal(payload.dataHealth.unmatchedRecentTaskCount, 1);
+  assert.equal(payload.dataHealth.unmatchedOutsideWindowCount, 1);
   assert.equal(payload.projects.items.length, 2);
   assert.equal(payload.projects.items.some((item) => item.projectName === 'other-project'), true);
   assert.equal(

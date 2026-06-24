@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import { runBudgetCommand } from './commands/budget.js';
 import { runCompareCommand } from './commands/compare.js';
+import { runDebugAttributionCommand } from './commands/debug.js';
 import { runInsightsCommand } from './commands/insights.js';
 import { runLeaderboardCommand } from './commands/leaderboard.js';
 import { runRecommendCommand } from './commands/recommend.js';
@@ -58,6 +59,10 @@ program.command('recommend').description('Show V0.5 Lite recommendations for the
 program.command('watch').description('Watch the current branch and auto-manage tasks').action(runWatchCommand);
 
 program.command('waste').description('Show V0.3 Lite potential waste tasks for the last 30 days').action(runWasteCommand);
+
+const debugProgram = program.command('debug').description('Inspect local data health and attribution gaps');
+
+debugProgram.command('attribution').description('Explain why task attribution may be thin or missing').action(runDebugAttributionCommand);
 
 const taskProgram = program.command('task').description('Track time-window-based task attribution');
 

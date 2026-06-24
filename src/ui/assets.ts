@@ -669,6 +669,21 @@ button:hover {
   font-size: 0.86rem;
 }
 
+.action-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.action-list div {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(23, 20, 18, 0.06);
+  color: var(--muted-strong);
+  line-height: 1.45;
+}
+
 .signal-list,
 .mini-list,
 .recommend-list,
@@ -768,6 +783,11 @@ button:hover {
   margin-top: 12px;
   color: var(--muted);
   line-height: 1.5;
+}
+
+.health-stack {
+  display: grid;
+  gap: 16px;
 }
 
 .recommend-item strong,
@@ -1229,6 +1249,7 @@ const heroMiniCopy = document.getElementById('hero-mini-copy');
 
 const SECTIONS = [
   ['overview', 'Overview'],
+  ['health', 'Health'],
   ['projects', 'Projects'],
   ['tasks', 'Tasks'],
   ['budget', 'Budget'],
@@ -1274,11 +1295,12 @@ function renderCurrentView() {
   renderNav();
 
   if (latestData.emptyState) {
-    app.innerHTML = '<section class="empty-state"><h2>' + escapeHtml(latestData.emptyState.title) + '</h2><p>' + escapeHtml(latestData.emptyState.body) + '</p></section>';
+    app.innerHTML = '<section class="empty-state"><h2>' + escapeHtml(latestData.emptyState.title) + '</h2><p>' + escapeHtml(latestData.emptyState.body) + '</p>' + renderActionList(latestData.emptyState.nextSteps) + '</section>';
     return;
   }
 
   switch (getCurrentSection()) {
+    case 'health': renderHealth(); break;
     case 'projects': renderProjects(); break;
     case 'tasks': renderTasks(); break;
     case 'budget': renderBudget(); break;
@@ -1338,7 +1360,7 @@ function renderOverview() {
         '</div>' +
       '</div>' +
       '<div class="metrics-grid">' + buildMetricCards(data, trackedProjects, untrackedProjects) + '</div>' +
-      '<div class="overview-grid">' +
+        '<div class="overview-grid">' +
         '<div class="stack overview-sidebar">' +
           '<article class="panel">' +
             sectionHeader('Compare + Direction', 'Use this as the main trend signal before digging into detail pages.', 'agent-roi compare') +
@@ -1367,6 +1389,12 @@ function renderOverview() {
         '</div>' +
         '<div class="stack">' +
           '<article class="panel panel-compact">' +
+            sectionHeader('Data Health', 'Check whether your dashboard is powered by enough local attribution coverage.', 'debug attribution') +
+            '<div class="summary-pills"><span>' + escapeHtml(formatInteger(data.dataHealth.matchedRecentTaskCount)) + ' matched tasks</span><span>' + escapeHtml(formatInteger(data.dataHealth.unmatchedRecentTaskCount)) + ' unmatched tasks</span><span>' + escapeHtml(formatInteger(data.dataHealth.untrackedProjectCount)) + ' untracked projects</span></div>' +
+            renderLineGroup(data.dataHealth.notes, data.dataHealth.codexSessionCount === 0 ? 'No Codex sessions scanned yet.' : 'Coverage signals are available.') +
+            renderActionList(data.dataHealth.onboardingSteps.slice(0, 2)) +
+          '</article>' +
+          '<article class="panel panel-compact">' +
             sectionHeader('Next Recommended Move', 'The most actionable rule-based suggestion from the last 30 days.', 'recommend') +
             '<div class="recommend-list">' + renderRecommendItems(data.recommend.items.slice(0, 2), data.recommend.emptyReason) + '</div>' +
           '</article>' +
@@ -1386,6 +1414,32 @@ function renderOverview() {
           '</article>' +
         '</div>' +
       '</div>' +
+    '</section>';
+}
+
+function renderHealth() {
+  const data = latestData.dataHealth;
+  app.innerHTML =
+    '<section class="page-section">' +
+      '<article class="panel">' +
+        sectionHeader('Data Health', 'Understand whether missing insights come from missing scans, missing tasks, project mismatch, or time-window mismatch.', 'debug attribution') +
+        '<div class="inventory-strip">' +
+          renderInventoryStat(formatInteger(data.codexSessionCount), 'Codex sessions') +
+          renderInventoryStat(formatInteger(data.trackedProjectCount), 'tracked projects') +
+          renderInventoryStat(formatInteger(data.matchedRecentTaskCount), 'matched recent tasks') +
+          renderInventoryStat(formatInteger(data.unmatchedRecentTaskCount), 'unmatched recent tasks') +
+        '</div>' +
+        '<div class="detail-grid">' +
+          '<article class="detail-card"><strong>Coverage Summary</strong><div class="health-stack"><div class="muted">Latest capture: ' + escapeHtml(data.latestSessionCaptureAt || 'N/A') + '</div><div class="muted">Claude snapshots scanned: ' + escapeHtml(formatInteger(data.claudeSessionCount)) + '</div><div class="muted">Unknown-model sessions: ' + escapeHtml(formatInteger(data.unknownCostSessionCount)) + '</div><div class="muted">Active projects: ' + escapeHtml(formatInteger(data.activeProjectCount)) + '</div><div class="muted">Recent completed tasks: ' + escapeHtml(formatInteger(data.recentCompletedTaskCount)) + '</div></div></article>' +
+          '<article class="detail-card"><strong>Why Tasks Stay Unmatched</strong><div class="health-stack"><div class="muted">No same-project sessions: ' + escapeHtml(formatInteger(data.unmatchedNoProjectSessionsCount)) + '</div><div class="muted">Project sessions outside task window: ' + escapeHtml(formatInteger(data.unmatchedOutsideWindowCount)) + '</div><div class="muted">Partial cost recent tasks: ' + escapeHtml(formatInteger(data.partialCostRecentTaskCount)) + '</div><div class="muted">Projects with usage but no tasks: ' + escapeHtml(formatInteger(data.untrackedProjectCount)) + '</div></div></article>' +
+        '</div>' +
+        '<h3 class="subsection-title">Notes</h3>' +
+        renderLineGroup(data.notes, 'No data health notes yet.') +
+        '<h3 class="subsection-title">Next Steps</h3>' +
+        renderActionList(data.onboardingSteps) +
+        '<h3 class="subsection-title">Recent Unmatched Tasks</h3>' +
+        '<div class="mini-list">' + renderDebugTasks(data.sampleUnmatchedTasks) + '</div>' +
+      '</article>' +
     '</section>';
 }
 
@@ -1719,6 +1773,14 @@ function renderMiniItems(items, emptyText) {
   return items.map((item) => '<div class="mini-item"><strong>' + escapeHtml(item.title) + '</strong>' + item.lines.map((line) => '<div class="muted">' + escapeHtml(line) + '</div>').join('') + '</div>').join('');
 }
 
+function renderDebugTasks(items) {
+  if (!items || items.length === 0) {
+    return renderEmptyCallout('neutral', 'No recent unmatched tasks.', 'Recent completed tasks already have matched Codex attribution in this window.');
+  }
+
+  return items.map((item) => '<div class="mini-item"><strong>' + escapeHtml(item.name) + '</strong><div class="muted">' + escapeHtml(item.projectName) + ' · Ended ' + escapeHtml(formatDateTime(item.endedAt)) + '</div><div class="muted">' + escapeHtml(item.reason) + '</div><div class="muted">Project Sessions: ' + escapeHtml(formatInteger(item.projectSessionCount)) + ' · Window Sessions: ' + escapeHtml(formatInteger(item.windowSessionCount)) + '</div></div>').join('');
+}
+
 function renderEmptyCallout(kind, title, body) {
   return '<div class="empty-callout ' + escapeHtml(kind) + '"><strong>' + escapeHtml(title) + '</strong><p>' + escapeHtml(body) + '</p></div>';
 }
@@ -1726,6 +1788,11 @@ function renderEmptyCallout(kind, title, body) {
 function buildSummaryList(lines) {
   if (!lines || lines.length === 0) return '';
   return '<div class="footer-note">' + lines.map((line) => '<div>• ' + escapeHtml(line) + '</div>').join('') + '</div>';
+}
+
+function renderActionList(lines) {
+  if (!lines || lines.length === 0) return '';
+  return '<div class="action-list">' + lines.map((line) => '<div>' + escapeHtml(line) + '</div>').join('') + '</div>';
 }
 
 function renderFilterChip(group, value, label) {

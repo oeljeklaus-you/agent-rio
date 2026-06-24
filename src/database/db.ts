@@ -334,6 +334,14 @@ export type ProjectCoverageRow = {
   lastTaskEndedAt: string | null;
 };
 
+export type TaskAttributionDebugRow = {
+  projectSessionCount: number;
+  windowSessionCount: number;
+  unknownCostWindowSessionCount: number;
+  firstProjectSessionAt: string | null;
+  lastProjectSessionAt: string | null;
+};
+
 export function getProjectAiSummary(
   db: Database.Database,
   projectPath: string,
@@ -433,6 +441,59 @@ export function listProjectCoverage(db: Database.Database): ProjectCoverageRow[]
     `,
     )
     .all() as ProjectCoverageRow[];
+}
+
+export function getLatestSessionCaptureAt(db: Database.Database): string | null {
+  const row = db
+    .prepare(
+      `
+      SELECT MAX(updated_at) AS latestUpdatedAt
+      FROM sessions
+    `,
+    )
+    .get() as { latestUpdatedAt: string | null } | undefined;
+
+  return row?.latestUpdatedAt ?? null;
+}
+
+export function getTaskAttributionDebug(
+  db: Database.Database,
+  input: {
+    projectPath: string;
+    startedAt: string;
+    endedAt: string;
+  },
+): TaskAttributionDebugRow {
+  const row = db
+    .prepare(
+      `
+      SELECT
+        COUNT(*) AS projectSessionCount,
+        SUM(CASE WHEN started_at >= @startedAt AND started_at < @endedAt THEN 1 ELSE 0 END) AS windowSessionCount,
+        SUM(CASE WHEN started_at >= @startedAt AND started_at < @endedAt AND cost_source = 'unknown_model' THEN 1 ELSE 0 END) AS unknownCostWindowSessionCount,
+        MIN(started_at) AS firstProjectSessionAt,
+        MAX(started_at) AS lastProjectSessionAt
+      FROM sessions
+      WHERE source = 'codex' AND project_path = @projectPath
+    `,
+    )
+    .get(input) as
+    | {
+        projectSessionCount: number | null;
+        windowSessionCount: number | null;
+        unknownCostWindowSessionCount: number | null;
+        firstProjectSessionAt: string | null;
+        lastProjectSessionAt: string | null;
+      }
+    | undefined;
+
+  return {
+    projectSessionCount: row?.projectSessionCount ?? 0,
+    windowSessionCount: row?.windowSessionCount ?? 0,
+    unknownCostWindowSessionCount: row?.unknownCostWindowSessionCount ?? 0,
+    firstProjectSessionAt: row?.firstProjectSessionAt ?? null,
+    lastProjectSessionAt: row?.lastProjectSessionAt ?? null,
+  };
 }
 
 export function getActiveTaskForProject(db: Database.Database, projectPath: string): TaskRecord | null {

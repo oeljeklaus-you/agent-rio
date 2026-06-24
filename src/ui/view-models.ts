@@ -1,5 +1,6 @@
 import { analyzeBudget, type BudgetAnalysis } from '../commands/budget.js';
 import { analyzeCompare, type CompareAnalysis, type CompareTaskSummary } from '../commands/compare.js';
+import { analyzeAttributionDebug, type AttributionDebugAnalysis } from '../commands/debug.js';
 import { analyzeInsights, type InsightAnalysis, type InsightTaskSummary } from '../commands/insights.js';
 import { analyzeLeaderboard, type LeaderboardAnalysis, type LeaderboardTaskSummary } from '../commands/leaderboard.js';
 import { analyzeRecommend, type RecommendationAnalysis, type RecommendationTaskSummary } from '../commands/recommend.js';
@@ -11,6 +12,7 @@ import { addDays, daysAgoIso, getUtcDayOfMonth, getUtcDaysInMonth, nowIso, start
 type EmptyState = {
   title: string;
   body: string;
+  nextSteps: string[];
 };
 
 type OverviewMetric<T> = {
@@ -25,6 +27,31 @@ type OverviewPayload = {
     localOnly: boolean;
     taskAttributionSource: 'codex';
     claudeSnapshotsExcluded: boolean;
+  };
+  dataHealth: {
+    latestSessionCaptureAt: string | null;
+    codexSessionCount: number;
+    claudeSessionCount: number;
+    unknownCostSessionCount: number;
+    trackedProjectCount: number;
+    untrackedProjectCount: number;
+    activeProjectCount: number;
+    recentCompletedTaskCount: number;
+    matchedRecentTaskCount: number;
+    unmatchedRecentTaskCount: number;
+    unmatchedNoProjectSessionsCount: number;
+    unmatchedOutsideWindowCount: number;
+    partialCostRecentTaskCount: number;
+    notes: string[];
+    onboardingSteps: string[];
+    sampleUnmatchedTasks: Array<{
+      name: string;
+      projectName: string;
+      endedAt: string | null;
+      reason: string;
+      projectSessionCount: number;
+      windowSessionCount: number;
+    }>;
   };
   budget: {
     spentCostUsd: number;
@@ -147,6 +174,7 @@ export function loadOverviewPayload(
   const currentNow = options?.now ?? nowIso();
   const budget = buildBudgetAnalysis(db, currentNow, options?.budgetLimitUsd ?? null);
   const compare = buildCompareAnalysis(db, currentNow);
+  const dataHealth = analyzeAttributionDebug(db, currentNow);
   const last30Tasks = buildUiTaskSummaries(db, listCompletedTasksInWindow(db, daysAgoIso(30, currentNow), currentNow));
   const historicalTasks = buildUiTaskSummaries(db, listCompletedTasksInWindow(db, '1970-01-01T00:00:00.000Z', currentNow));
   const insights = analyzeInsights(last30Tasks as InsightTaskSummary[]);
@@ -158,6 +186,7 @@ export function loadOverviewPayload(
   return buildOverviewPayload({
     budget,
     compare,
+    dataHealth,
     insights,
     waste,
     recommend,
@@ -171,6 +200,7 @@ export function loadOverviewPayload(
 export function buildOverviewPayload(input: {
   budget: BudgetAnalysis;
   compare: CompareAnalysis;
+  dataHealth: AttributionDebugAnalysis;
   insights: InsightAnalysis;
   waste: WasteAnalysis;
   recommend: RecommendationAnalysis;
@@ -193,6 +223,31 @@ export function buildOverviewPayload(input: {
       localOnly: true,
       taskAttributionSource: 'codex',
       claudeSnapshotsExcluded: true,
+    },
+    dataHealth: {
+      latestSessionCaptureAt: input.dataHealth.latestSessionCaptureAt,
+      codexSessionCount: input.dataHealth.codexSessionCount,
+      claudeSessionCount: input.dataHealth.claudeSessionCount,
+      unknownCostSessionCount: input.dataHealth.unknownCostSessionCount,
+      trackedProjectCount: input.dataHealth.trackedProjectCount,
+      untrackedProjectCount: input.dataHealth.untrackedProjectCount,
+      activeProjectCount: input.dataHealth.activeProjectCount,
+      recentCompletedTaskCount: input.dataHealth.recentCompletedTaskCount,
+      matchedRecentTaskCount: input.dataHealth.matchedRecentTaskCount,
+      unmatchedRecentTaskCount: input.dataHealth.unmatchedRecentTaskCount,
+      unmatchedNoProjectSessionsCount: input.dataHealth.unmatchedNoProjectSessionsCount,
+      unmatchedOutsideWindowCount: input.dataHealth.unmatchedOutsideWindowCount,
+      partialCostRecentTaskCount: input.dataHealth.partialCostRecentTaskCount,
+      notes: input.dataHealth.notes,
+      onboardingSteps: input.dataHealth.onboardingSteps,
+      sampleUnmatchedTasks: input.dataHealth.sampleUnmatchedTasks.map((item) => ({
+        name: item.name,
+        projectName: formatProjectName(item.projectPath),
+        endedAt: item.endedAt,
+        reason: item.reason,
+        projectSessionCount: item.projectSessionCount,
+        windowSessionCount: item.windowSessionCount,
+      })),
     },
     budget: {
       spentCostUsd: input.budget.spentCostUsd,
@@ -387,14 +442,24 @@ function resolveEmptyState(input: {
   if (input.budget.noData && input.insights.completedTaskCount === 0) {
     return {
       title: 'No local AI usage found.',
-      body: 'Run agent-roi scan first.',
+      body: 'Run agent-roi scan first, then come back to Tasks, Health, or the dashboard overview.',
+      nextSteps: [
+        'Run agent-roi scan',
+        'Run agent-roi ui --open',
+        'Use agent-roi debug attribution if data still looks thin',
+      ],
     };
   }
 
   if (input.insights.completedTaskCount === 0) {
     return {
       title: 'No completed tasks yet.',
-      body: 'Use agent-roi watch or agent-roi task to capture work.',
+      body: 'Use agent-roi watch or agent-roi task to capture work, then revisit Health or Task History.',
+      nextSteps: [
+        'Run agent-roi watch in an active Git repo',
+        'Or use agent-roi task start / stop manually',
+        'Refresh the dashboard after completing a task',
+      ],
     };
   }
 
